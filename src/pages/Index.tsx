@@ -5,12 +5,35 @@ import { CartSummary } from '@/components/CartSummary';
 import { useProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Package, AlertCircle } from 'lucide-react';
+import { Loader2, Package, AlertCircle, ShoppingBag, Sparkles, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from '@/components/ui/pagination';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const PRODUCTS_PER_PAGE = 6;
   
   const { products, loading, error, refetch } = useProducts();
   const { cart, addToCart, updateQuantity, updatePrice, removeFromCart, clearCart, getCartItem } = useCart();
@@ -25,9 +48,7 @@ const Index = () => {
 
   // Filter products based on search term
   const filteredProducts = useMemo(() => {
-    console.log('🔍 Filtrando produtos. Total disponível:', products.length);
     if (!searchTerm.trim()) {
-      console.log('📋 Sem termo de busca, retornando todos os produtos');
       return products;
     }
     
@@ -36,9 +57,19 @@ const Index = () => {
       product.descrprod?.toLowerCase().includes(term) ||
       product.codprod.toString().includes(term)
     );
-    console.log(`🎯 Busca por "${term}" encontrou ${filtered.length} produtos`);
     return filtered;
   }, [products, searchTerm]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const endIndex = startIndex + PRODUCTS_PER_PAGE;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // Reset to first page when search changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const handleSubmitCart = async () => {
     if (cart.items.length === 0) {
@@ -51,34 +82,66 @@ const Index = () => {
     }
 
     setIsSubmitting(true);
+    setShowConfirmDialog(false);
     
     try {
-      // Prepare payload for webhook
-      const payload = cart.items.map(item => ({
-        codprod: item.codprod,
-        descrprod: item.descrprod,
-        codvol: item.codvol,
-        quantidade: item.quantity,
-        valor_unitario: item.price,
-        total: item.total
+      // 1. Create order in database
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert([{
+          total_amount: cart.total
+        }])
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // 2. Create order items
+      const orderItems = cart.items.map(item => ({
+        order_id: order.id,
+        product_code: item.codprod,
+        product_description: item.descrprod,
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_price: item.total
       }));
 
-      const response = await fetch('https://n8neditor.ilftech.com.br/webhook-test/lovable-cart', {
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // 3. Send to webhook
+      const webhookPayload = {
+        order_code: order.order_code,
+        total_amount: cart.total,
+        items: cart.items.map(item => ({
+          codprod: item.codprod,
+          descrprod: item.descrprod,
+          codvol: item.codvol,
+          quantidade: item.quantity,
+          valor_unitario: item.price,
+          total: item.total
+        }))
+      };
+
+      const response = await fetch('https://n8nwebhook.ilftech.com.br/webhook/lovable-cart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(webhookPayload),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.warn('Webhook failed, but order was saved:', response.status);
       }
 
       // Success
       toast({
-        title: "Pedido criado",
-        description: "Seu pedido foi enviado com sucesso!",
+        title: "Pedido criado com sucesso! 🎉",
+        description: `Código do pedido: ${order.order_code}`,
         variant: "default",
       });
 
@@ -96,30 +159,33 @@ const Index = () => {
   };
 
   if (loading) {
-    console.log('⏳ Ainda carregando produtos...');
     return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-          <p className="text-lg font-medium text-foreground">Carregando produtos...</p>
-          <p className="text-sm text-muted-foreground">Conectando ao banco de dados...</p>
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/10 flex items-center justify-center">
+        <div className="text-center space-y-6 p-8 bg-card/60 backdrop-blur-sm rounded-2xl border border-border/50">
+          <div className="relative">
+            <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
+            <Sparkles className="h-6 w-6 text-accent absolute -top-2 -right-2 animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-xl font-semibold text-foreground">Carregando produtos...</p>
+            <p className="text-sm text-muted-foreground">Preparando a melhor experiência para você</p>
+          </div>
         </div>
       </div>
     );
   }
 
   if (error) {
-    console.log('❌ Erro detectado:', error);
     return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
-        <div className="text-center space-y-4 max-w-md mx-auto p-6">
-          <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
-          <h2 className="text-xl font-semibold text-foreground">Erro ao carregar produtos</h2>
-          <p className="text-muted-foreground">{error}</p>
-          <Button onClick={() => {
-            console.log('🔄 Tentando recarregar produtos...');
-            refetch();
-          }} variant="outline">
+      <div className="min-h-screen bg-gradient-to-br from-destructive/5 via-background to-secondary/10 flex items-center justify-center">
+        <div className="text-center space-y-6 max-w-md mx-auto p-8 bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50">
+          <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-foreground">Ops! Algo deu errado</h2>
+            <p className="text-muted-foreground">{error}</p>
+          </div>
+          <Button onClick={() => refetch()} variant="outline" className="w-full">
+            <Package className="h-4 w-4 mr-2" />
             Tentar novamente
           </Button>
         </div>
@@ -127,27 +193,35 @@ const Index = () => {
     );
   }
 
-  console.log('🎯 Renderizando página principal. Produtos filtrados:', filteredProducts.length);
-
   return (
-    <div className="min-h-screen bg-gradient-subtle">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/10">
       {/* Header */}
-      <header className="bg-card/95 backdrop-blur-sm border-b border-border/60 sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-6">
-          <div className="text-center mb-6">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Seleção de Produtos
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Escolha seus produtos e adicione ao carrinho
+      <header className="bg-card/95 backdrop-blur-sm border-b border-border/60 sticky top-0 z-40 shadow-lg">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="p-3 bg-primary/10 rounded-2xl">
+                <ShoppingBag className="h-8 w-8 text-primary" />
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Loja Premium
+              </h1>
+              <div className="p-3 bg-accent/10 rounded-2xl">
+                <Star className="h-8 w-8 text-accent fill-current" />
+              </div>
+            </div>
+            <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
+              Descubra produtos incríveis e crie sua experiência de compra perfeita
             </p>
           </div>
           
-          <SearchBar
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="Buscar produtos por nome ou código..."
-          />
+          <div className="max-w-2xl mx-auto">
+            <SearchBar
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="🔍 Buscar produtos por nome ou código..."
+            />
+          </div>
         </div>
       </header>
 
@@ -155,54 +229,161 @@ const Index = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Products List */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Debug info */}
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 text-sm">
-              <strong>Debug Info:</strong><br/>
-              📦 Total produtos: {products.length}<br/>
-              🔍 Produtos filtrados: {filteredProducts.length}<br/>
-              📝 Termo de busca: "{searchTerm}"<br/>
-              ⏳ Carregando: {loading ? 'Sim' : 'Não'}<br/>
-              ❌ Erro: {error || 'Nenhum'}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Products Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Package className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Nossos Produtos</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {filteredProducts.length} produto{filteredProducts.length !== 1 ? 's' : ''} encontrado{filteredProducts.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+              {totalPages > 1 && (
+                <div className="text-sm text-muted-foreground">
+                  Página {currentPage} de {totalPages}
+                </div>
+              )}
             </div>
             
             {filteredProducts.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto disponível'}
-                </h3>
-                <p className="text-muted-foreground">
-                  {searchTerm 
-                    ? 'Tente buscar por outro termo' 
-                    : 'Não há produtos disponíveis no momento'
-                  }
-                </p>
+              <div className="text-center py-16 bg-card/50 rounded-2xl border border-border/50">
+                <div className="max-w-md mx-auto space-y-4">
+                  <div className="p-4 bg-muted/50 rounded-full w-fit mx-auto">
+                    <Package className="h-12 w-12 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-2xl font-semibold text-foreground">
+                    {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto disponível'}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {searchTerm 
+                      ? 'Tente buscar por outro termo ou navegue por todas as categorias' 
+                      : 'Estamos preparando novos produtos incríveis para você!'
+                    }
+                  </p>
+                  {searchTerm && (
+                    <Button 
+                      onClick={() => setSearchTerm('')} 
+                      variant="outline" 
+                      className="mt-4"
+                    >
+                      Ver todos os produtos
+                    </Button>
+                  )}
+                </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.codprod}
-                    product={product}
-                    cartItem={getCartItem(product.codprod)}
-                    onAddToCart={addToCart}
-                    onUpdateQuantity={updateQuantity}
-                    onUpdatePrice={updatePrice}
-                    onRemoveFromCart={removeFromCart}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {paginatedProducts.map((product) => (
+                    <ProductCard
+                      key={product.codprod}
+                      product={product}
+                      cartItem={getCartItem(product.codprod)}
+                      onAddToCart={addToCart}
+                      onUpdateQuantity={updateQuantity}
+                      onUpdatePrice={updatePrice}
+                      onRemoveFromCart={removeFromCart}
+                    />
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center mt-8">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (currentPage > 1) setCurrentPage(currentPage - 1);
+                            }}
+                            className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                          />
+                        </PaginationItem>
+                        
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentPage(page);
+                              }}
+                              isActive={currentPage === page}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                            }}
+                            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
           {/* Cart Summary */}
           <div className="lg:col-span-1">
-            <CartSummary
-              cart={cart}
-              onSubmit={handleSubmitCart}
-              isSubmitting={isSubmitting}
-            />
+            <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+              <CartSummary
+                cart={cart}
+                onSubmit={() => setShowConfirmDialog(true)}
+                isSubmitting={isSubmitting}
+                onRemoveFromCart={removeFromCart}
+              />
+              
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5 text-primary" />
+                    Confirmar Pedido
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja finalizar este pedido?
+                    <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Total de itens:</span>
+                          <span className="font-medium">{cart.items.length}</span>
+                        </div>
+                        <div className="flex justify-between text-lg font-bold">
+                          <span>Valor total:</span>
+                          <span className="text-primary">R$ {cart.total.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleSubmitCart}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    Confirmar Pedido
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </main>

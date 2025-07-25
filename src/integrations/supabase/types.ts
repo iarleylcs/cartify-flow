@@ -65,6 +65,68 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          product_code: number
+          product_description: string
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          product_code: number
+          product_description: string
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_code?: number
+          product_description?: string
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          id: string
+          order_code: string
+          total_amount: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_code?: string
+          total_amount: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_code?: string
+          total_amount?: number
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           ativo: string | null
