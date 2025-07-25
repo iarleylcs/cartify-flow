@@ -4,9 +4,17 @@ export interface Product {
   codvol: string | null;
   preco: number | null;
   usoprod?: string | null;
-  codmarca?: string | null;
-  provider?: string | null;
+  origprod?: number | null;
   ativo?: string | null;
+  local?: string | null;
+  usalocal?: string | null;
+  codvolcompra?: string | null;
+  codmarca?: string | null;
+  decvlr?: number | null;
+  decqtd?: number | null;
+  tipocontest?: string | null;
+  labelcontest?: string | null;
+  provider?: string | null;
 }
 
 export interface CartItem {

@@ -16,15 +16,28 @@ const Index = () => {
   const { cart, addToCart, updateQuantity, updatePrice, removeFromCart, clearCart, getCartItem } = useCart();
   const { toast } = useToast();
 
+  console.log('🏠 Estado da página:', { 
+    productsCount: products.length, 
+    loading, 
+    error, 
+    searchTerm 
+  });
+
   // Filter products based on search term
   const filteredProducts = useMemo(() => {
-    if (!searchTerm.trim()) return products;
+    console.log('🔍 Filtrando produtos. Total disponível:', products.length);
+    if (!searchTerm.trim()) {
+      console.log('📋 Sem termo de busca, retornando todos os produtos');
+      return products;
+    }
     
     const term = searchTerm.toLowerCase().trim();
-    return products.filter(product => 
+    const filtered = products.filter(product => 
       product.descrprod?.toLowerCase().includes(term) ||
       product.codprod.toString().includes(term)
     );
+    console.log(`🎯 Busca por "${term}" encontrou ${filtered.length} produtos`);
+    return filtered;
   }, [products, searchTerm]);
 
   const handleSubmitCart = async () => {
@@ -83,30 +96,38 @@ const Index = () => {
   };
 
   if (loading) {
+    console.log('⏳ Ainda carregando produtos...');
     return (
       <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
           <p className="text-lg font-medium text-foreground">Carregando produtos...</p>
+          <p className="text-sm text-muted-foreground">Conectando ao banco de dados...</p>
         </div>
       </div>
     );
   }
 
   if (error) {
+    console.log('❌ Erro detectado:', error);
     return (
       <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
         <div className="text-center space-y-4 max-w-md mx-auto p-6">
           <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
           <h2 className="text-xl font-semibold text-foreground">Erro ao carregar produtos</h2>
           <p className="text-muted-foreground">{error}</p>
-          <Button onClick={refetch} variant="outline">
+          <Button onClick={() => {
+            console.log('🔄 Tentando recarregar produtos...');
+            refetch();
+          }} variant="outline">
             Tentar novamente
           </Button>
         </div>
       </div>
     );
   }
+
+  console.log('🎯 Renderizando página principal. Produtos filtrados:', filteredProducts.length);
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -135,6 +156,16 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Products List */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Debug info */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 text-sm">
+              <strong>Debug Info:</strong><br/>
+              📦 Total produtos: {products.length}<br/>
+              🔍 Produtos filtrados: {filteredProducts.length}<br/>
+              📝 Termo de busca: "{searchTerm}"<br/>
+              ⏳ Carregando: {loading ? 'Sim' : 'Não'}<br/>
+              ❌ Erro: {error || 'Nenhum'}
+            </div>
+            
             {filteredProducts.length === 0 ? (
               <div className="text-center py-12">
                 <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
