@@ -63,7 +63,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   {product.codvol}
                 </Badge>
               )}
-              <Badge variant="outline" className="flex items-center gap-1 bg-accent/10 border-accent/30 text-accent-foreground">
+              <Badge variant="outline" className="flex items-center gap-1 bg-accent/10 border-accent/30 text-foreground">
                 <DollarSign className="h-3 w-3" />
                 R$ {product.preco?.toFixed(2) || '0.00'}
               </Badge>
