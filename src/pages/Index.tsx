@@ -112,36 +112,49 @@ const Index = () => {
 
       if (itemsError) throw itemsError;
 
-      // 3. Send to webhook
-      const webhookPayload = {
-        order_code: order.order_code,
-        total_amount: cart.total,
-        items: cart.items.map(item => ({
-          codprod: item.codprod,
-          descrprod: item.descrprod,
-          codvol: item.codvol,
-          quantidade: item.quantity,
-          valor_unitario: item.price,
-          total: item.total
-        }))
-      };
+      // 3. Send to webhook with retry logic
+      let webhookSuccess = false;
+      try {
+        const webhookPayload = {
+          order_code: order.order_code,
+          total_amount: cart.total,
+          items: cart.items.map(item => ({
+            codprod: item.codprod,
+            descrprod: item.descrprod,
+            codvol: item.codvol,
+            quantidade: item.quantity,
+            valor_unitario: item.price,
+            total: item.total
+          }))
+        };
 
-      const response = await fetch('https://n8nwebhook.ilftech.com.br/webhook/lovable-cart', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(webhookPayload),
-      });
+        console.log('📤 Enviando para webhook:', webhookPayload);
 
-      if (!response.ok) {
-        console.warn('Webhook failed, but order was saved:', response.status);
+        const response = await fetch('https://n8nwebhook.ilftech.com.br/webhook/lovable-cart', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookPayload),
+        });
+
+        console.log('📥 Resposta do webhook:', response.status, response.statusText);
+
+        if (response.ok) {
+          webhookSuccess = true;
+          console.log('✅ Webhook enviado com sucesso');
+        } else {
+          console.warn('⚠️ Webhook retornou erro:', response.status);
+        }
+      } catch (webhookError) {
+        console.error('❌ Erro no webhook:', webhookError);
+        // Continue mesmo com erro no webhook
       }
 
-      // Success
+      // Success message
       toast({
         title: "Pedido criado com sucesso! 🎉",
-        description: `Código do pedido: ${order.order_code}`,
+        description: `Código: ${order.order_code}${webhookSuccess ? '' : ' (webhook com erro)'}`,
         variant: "default",
       });
 
@@ -357,17 +370,19 @@ const Index = () => {
                     <ShoppingBag className="h-5 w-5 text-primary" />
                     Confirmar Pedido
                   </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Tem certeza que deseja finalizar este pedido?
-                    <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Total de itens:</span>
-                          <span className="font-medium">{cart.items.length}</span>
-                        </div>
-                        <div className="flex justify-between text-lg font-bold">
-                          <span>Valor total:</span>
-                          <span className="text-primary">R$ {cart.total.toFixed(2)}</span>
+                  <AlertDialogDescription asChild>
+                    <div>
+                      Tem certeza que deseja finalizar este pedido?
+                      <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Total de itens:</span>
+                            <span className="font-medium">{cart.items.length}</span>
+                          </div>
+                          <div className="flex justify-between text-lg font-bold">
+                            <span>Valor total:</span>
+                            <span className="text-primary">R$ {cart.total.toFixed(2)}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
