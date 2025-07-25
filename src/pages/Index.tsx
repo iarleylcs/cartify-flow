@@ -154,7 +154,7 @@ const Index = () => {
       // Success message
       toast({
         title: "Pedido criado com sucesso! 🎉",
-        description: `Código: ${order.order_code}${webhookSuccess ? '' : ' (webhook com erro)'}`,
+        description: `Seu pedido foi processado${webhookSuccess ? '' : ' (webhook com erro)'}`,
         variant: "default",
       });
 
