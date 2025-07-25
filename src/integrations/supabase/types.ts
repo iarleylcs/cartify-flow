@@ -68,8 +68,8 @@ export type Database = {
       order_items: {
         Row: {
           created_at: string
-          id: string
-          order_id: string
+          id: number
+          order_id: number
           product_code: number
           product_description: string
           quantity: number
@@ -78,8 +78,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          id?: string
-          order_id: string
+          id?: number
+          order_id: number
           product_code: number
           product_description: string
           quantity: number
@@ -88,8 +88,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          id?: string
-          order_id?: string
+          id?: number
+          order_id?: number
           product_code?: number
           product_description?: string
           quantity?: number
@@ -109,19 +109,19 @@ export type Database = {
       orders: {
         Row: {
           created_at: string
-          id: string
+          id: number
           order_code: string
           total_amount: number
         }
         Insert: {
           created_at?: string
-          id?: string
+          id?: number
           order_code?: string
           total_amount: number
         }
         Update: {
           created_at?: string
-          id?: string
+          id?: number
           order_code?: string
           total_amount?: number
         }
