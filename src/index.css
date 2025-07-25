@@ -18,23 +18,23 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 18%;
 
-    /* Primary: Modern Purple/Violet */
-    --primary: 260 90% 62%;
+    /* Primary: Green Theme */
+    --primary: 120 50% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 260 85% 75%;
-    --primary-variant: 270 85% 70%;
+    --primary-glow: 120 50% 70%;
+    --primary-variant: 125 55% 65%;
 
-    /* Secondary: Soft Blue-Gray */
-    --secondary: 220 15% 95%;
+    /* Secondary: Soft Green-Gray */
+    --secondary: 120 15% 95%;
     --secondary-foreground: 215 25% 18%;
 
-    --muted: 220 15% 95%;
+    --muted: 120 15% 95%;
     --muted-foreground: 215 15% 50%;
 
-    /* Accent: Vibrant Cyan/Teal */
-    --accent: 185 90% 65%;
+    /* Accent: Vibrant Green */
+    --accent: 120 55% 65%;
     --accent-foreground: 0 0% 100%;
-    --accent-variant: 190 85% 72%;
+    --accent-variant: 125 60% 70%;
 
     --destructive: 0 85% 62%;
     --destructive-foreground: 0 0% 100%;

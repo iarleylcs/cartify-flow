@@ -204,14 +204,14 @@ const Index = () => {
                 <ShoppingBag className="h-8 w-8 text-primary" />
               </div>
               <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Loja Premium
+                SmartPedido
               </h1>
               <div className="p-3 bg-accent/10 rounded-2xl">
                 <Star className="h-8 w-8 text-accent fill-current" />
               </div>
             </div>
             <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
-              Descubra produtos incríveis e crie sua experiência de compra perfeita
+              Selecione os produtos para o pedido
             </p>
           </div>
           
