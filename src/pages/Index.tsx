@@ -33,7 +33,7 @@ const Index = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const PRODUCTS_PER_PAGE = 6;
+  const PRODUCTS_PER_PAGE = 4;
   
   const { products, loading, error, refetch } = useProducts();
   const { cart, addToCart, updateQuantity, updatePrice, removeFromCart, clearCart, getCartItem } = useCart();
@@ -210,20 +210,20 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/10">
       {/* Header */}
       <header className="bg-card/95 backdrop-blur-sm border-b border-border/60 sticky top-0 z-40 shadow-lg">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="p-3 bg-primary/10 rounded-2xl">
-                <ShoppingBag className="h-8 w-8 text-primary" />
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+          <div className="text-center mb-4 sm:mb-8">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <div className="p-2 sm:p-3 bg-primary/10 rounded-xl sm:rounded-2xl">
+                <ShoppingBag className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 SmartPedido
               </h1>
-              <div className="p-3 bg-accent/10 rounded-2xl">
-                <Star className="h-8 w-8 text-accent fill-current" />
+              <div className="p-2 sm:p-3 bg-accent/10 rounded-xl sm:rounded-2xl">
+                <Star className="h-6 w-6 sm:h-8 sm:w-8 text-accent fill-current" />
               </div>
             </div>
-            <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-base sm:text-xl max-w-2xl mx-auto px-4">
               Selecione os produtos para o pedido
             </p>
           </div>
@@ -239,40 +239,40 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-8">
           {/* Products List */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="xl:col-span-2 space-y-4 sm:space-y-8">
             {/* Products Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Package className="h-5 w-5 text-primary" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg">
+                  <Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">Nossos Produtos</h2>
-                  <p className="text-sm text-muted-foreground">
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground">Nossos Produtos</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     {filteredProducts.length} produto{filteredProducts.length !== 1 ? 's' : ''} encontrado{filteredProducts.length !== 1 ? 's' : ''}
                   </p>
                 </div>
               </div>
               {totalPages > 1 && (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-xs sm:text-sm text-muted-foreground">
                   Página {currentPage} de {totalPages}
                 </div>
               )}
             </div>
             
             {filteredProducts.length === 0 ? (
-              <div className="text-center py-16 bg-card/50 rounded-2xl border border-border/50">
-                <div className="max-w-md mx-auto space-y-4">
-                  <div className="p-4 bg-muted/50 rounded-full w-fit mx-auto">
-                    <Package className="h-12 w-12 text-muted-foreground" />
+              <div className="text-center py-12 sm:py-16 bg-card/50 rounded-2xl border border-border/50 mx-2 sm:mx-0">
+                <div className="max-w-md mx-auto space-y-4 px-4">
+                  <div className="p-3 sm:p-4 bg-muted/50 rounded-full w-fit mx-auto">
+                    <Package className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground" />
                   </div>
-                  <h3 className="text-2xl font-semibold text-foreground">
+                  <h3 className="text-xl sm:text-2xl font-semibold text-foreground">
                     {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto disponível'}
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     {searchTerm 
                       ? 'Tente buscar por outro termo ou navegue por todas as categorias' 
                       : 'Estamos preparando novos produtos incríveis para você!'
@@ -291,7 +291,7 @@ const Index = () => {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
                   {paginatedProducts.map((product) => (
                     <ProductCard
                       key={product.codprod}
@@ -355,7 +355,7 @@ const Index = () => {
           </div>
 
           {/* Cart Summary */}
-          <div className="lg:col-span-1">
+          <div className="xl:col-span-1 order-first xl:order-last">
             <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
               <CartSummary
                 cart={cart}
