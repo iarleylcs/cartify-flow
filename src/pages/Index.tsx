@@ -355,7 +355,7 @@ const Index = () => {
           </div>
 
           {/* Cart Summary */}
-          <div className="xl:col-span-1 order-first xl:order-last">
+          <div className="xl:col-span-1">
             <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
               <CartSummary
                 cart={cart}
