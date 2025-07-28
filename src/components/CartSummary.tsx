@@ -21,7 +21,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
   if (cart.items.length === 0) {
     return (
       <Card className="sticky top-4 sm:top-6 bg-gradient-to-br from-card/95 to-muted/20 backdrop-blur-sm border-border/60 shadow-lg">
-        <CardContent className="p-4 sm:p-8 text-center">
+        <CardContent className="p-6 sm:p-8 text-center flex items-center justify-center min-h-[280px] sm:min-h-[320px]">
           <div className="relative">
             <ShoppingCart className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
             <Sparkles className="h-4 w-4 sm:h-6 sm:w-6 text-accent absolute -top-1 -right-4 sm:-top-2 sm:-right-6 animate-pulse" />
