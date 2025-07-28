@@ -321,20 +321,116 @@ const Index = () => {
                           />
                         </PaginationItem>
                         
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                          <PaginationItem key={page}>
-                            <PaginationLink
-                              href="#"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setCurrentPage(page);
-                              }}
-                              isActive={currentPage === page}
-                            >
-                              {page}
-                            </PaginationLink>
-                          </PaginationItem>
-                        ))}
+                        {(() => {
+                          const maxVisiblePages = 3;
+                          const pages = [];
+                          
+                          if (totalPages <= maxVisiblePages) {
+                            // Show all pages if total is less than or equal to max visible
+                            for (let i = 1; i <= totalPages; i++) {
+                              pages.push(
+                                <PaginationItem key={i}>
+                                  <PaginationLink
+                                    href="#"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setCurrentPage(i);
+                                    }}
+                                    isActive={currentPage === i}
+                                  >
+                                    {i}
+                                  </PaginationLink>
+                                </PaginationItem>
+                              );
+                            }
+                          } else {
+                            // Always show first page
+                            pages.push(
+                              <PaginationItem key={1}>
+                                <PaginationLink
+                                  href="#"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setCurrentPage(1);
+                                  }}
+                                  isActive={currentPage === 1}
+                                >
+                                  1
+                                </PaginationLink>
+                              </PaginationItem>
+                            );
+                            
+                            // Show current page if it's not first or last
+                            if (currentPage > 2 && currentPage < totalPages - 1) {
+                              if (currentPage > 3) {
+                                pages.push(
+                                  <PaginationItem key="dots1">
+                                    <span className="px-4 py-2 text-sm text-muted-foreground">...</span>
+                                  </PaginationItem>
+                                );
+                              }
+                              pages.push(
+                                <PaginationItem key={currentPage}>
+                                  <PaginationLink
+                                    href="#"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setCurrentPage(currentPage);
+                                    }}
+                                    isActive={true}
+                                  >
+                                    {currentPage}
+                                  </PaginationLink>
+                                </PaginationItem>
+                              );
+                            } else if (currentPage === 2) {
+                              // Show page 2 if current page is 2
+                              pages.push(
+                                <PaginationItem key={2}>
+                                  <PaginationLink
+                                    href="#"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setCurrentPage(2);
+                                    }}
+                                    isActive={currentPage === 2}
+                                  >
+                                    2
+                                  </PaginationLink>
+                                </PaginationItem>
+                              );
+                            }
+                            
+                            // Show dots before last page if needed
+                            if (currentPage < totalPages - 2) {
+                              pages.push(
+                                <PaginationItem key="dots2">
+                                  <span className="px-4 py-2 text-sm text-muted-foreground">...</span>
+                                </PaginationItem>
+                              );
+                            }
+                            
+                            // Always show last page if it's not page 1
+                            if (totalPages > 1) {
+                              pages.push(
+                                <PaginationItem key={totalPages}>
+                                  <PaginationLink
+                                    href="#"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setCurrentPage(totalPages);
+                                    }}
+                                    isActive={currentPage === totalPages}
+                                  >
+                                    {totalPages}
+                                  </PaginationLink>
+                                </PaginationItem>
+                              );
+                            }
+                          }
+                          
+                          return pages;
+                        })()}
                         
                         <PaginationItem>
                           <PaginationNext 
