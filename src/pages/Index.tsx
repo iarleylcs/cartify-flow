@@ -112,43 +112,61 @@ const Index = () => {
 
       if (itemsError) throw itemsError;
 
-      // 3. Send to webhook with retry logic
+      // 3. Send to webhooks with retry logic
       let webhookSuccess = false;
-      try {
-        const webhookPayload = {
-          order_code: order.order_code,
-          total_amount: cart.total,
-          items: cart.items.map(item => ({
-            codprod: item.codprod,
-            descrprod: item.descrprod,
-            codvol: item.codvol,
-            quantidade: item.quantity,
-            valor_unitario: item.price,
-            total: item.total
-          }))
-        };
+      const webhookPayload = {
+        order_code: order.order_code,
+        total_amount: cart.total,
+        items: cart.items.map(item => ({
+          codprod: item.codprod,
+          descrprod: item.descrprod,
+          codvol: item.codvol,
+          quantidade: item.quantity,
+          valor_unitario: item.price,
+          total: item.total
+        }))
+      };
 
-        console.log('📤 Enviando para webhook:', webhookPayload);
+      console.log('📤 Enviando para webhooks:', webhookPayload);
 
-        const response = await fetch('https://n8nwebhook.ilftech.com.br/webhook/lovable-cart', {
+      // Send to both webhooks in parallel
+      const webhookPromises = [
+        fetch('https://n8nwebhook.ilftech.com.br/webhook/lovable-cart', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(webhookPayload),
+        }),
+        fetch('https://n8neditor.ilftech.com.br/webhook-waiting/8458', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookPayload),
+        })
+      ];
+
+      try {
+        const responses = await Promise.allSettled(webhookPromises);
+        
+        responses.forEach((result, index) => {
+          const webhookName = index === 0 ? 'webhook principal' : 'webhook editor';
+          if (result.status === 'fulfilled') {
+            console.log(`📥 Resposta do ${webhookName}:`, result.value.status, result.value.statusText);
+            if (result.value.ok) {
+              webhookSuccess = true;
+              console.log(`✅ ${webhookName} enviado com sucesso`);
+            } else {
+              console.warn(`⚠️ ${webhookName} retornou erro:`, result.value.status);
+            }
+          } else {
+            console.error(`❌ Erro no ${webhookName}:`, result.reason);
+          }
         });
-
-        console.log('📥 Resposta do webhook:', response.status, response.statusText);
-
-        if (response.ok) {
-          webhookSuccess = true;
-          console.log('✅ Webhook enviado com sucesso');
-        } else {
-          console.warn('⚠️ Webhook retornou erro:', response.status);
-        }
       } catch (webhookError) {
-        console.error('❌ Erro no webhook:', webhookError);
-        // Continue mesmo com erro no webhook
+        console.error('❌ Erro geral nos webhooks:', webhookError);
+        // Continue mesmo com erro nos webhooks
       }
 
       // Success message
