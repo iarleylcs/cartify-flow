@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { SearchBar } from '@/components/SearchBar';
 import { ProductCard } from '@/components/ProductCard';
 import { CartSummary } from '@/components/CartSummary';
@@ -29,15 +30,26 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [n8nSessionId, setN8nSessionId] = useState<string | null>(null);
   const PRODUCTS_PER_PAGE = 4;
   
   const { products, loading, error, refetch } = useProducts();
   const { cart, addToCart, updateQuantity, updatePrice, removeFromCart, clearCart, getCartItem } = useCart();
   const { toast } = useToast();
+
+  // Capturar o chatId da URL quando a página carrega
+  useEffect(() => {
+    const chatId = searchParams.get('chatId');
+    if (chatId) {
+      setN8nSessionId(chatId);
+      console.log('🔗 ChatId capturado da URL:', chatId);
+    }
+  }, [searchParams]);
 
   console.log('🏠 Estado da página:', { 
     productsCount: products.length, 
@@ -115,6 +127,7 @@ const Index = () => {
       // 3. Send to webhooks with retry logic
       let webhookSuccess = false;
       const webhookPayload = {
+        chatId: n8nSessionId,
         order_code: order.order_code,
         total_amount: cart.total,
         items: cart.items.map(item => ({
