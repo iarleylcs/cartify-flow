@@ -6,7 +6,7 @@ import { CartSummary } from '@/components/CartSummary';
 import { useProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Package, AlertCircle, ShoppingBag, Sparkles, Star } from 'lucide-react';
+import { Loader2, Package, AlertCircle, ShoppingBag, Sparkles, Star, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   Pagination, 
@@ -35,19 +35,64 @@ const Index = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [n8nSessionId, setN8nSessionId] = useState<string | null>(null);
+  const [sessionData, setSessionData] = useState<{
+    sessionId: string | null;
+    chatId: string | null;
+    exp: number | null;
+    sig: string | null;
+  }>({ sessionId: null, chatId: null, exp: null, sig: null });
+  const [isExpired, setIsExpired] = useState(false);
   const PRODUCTS_PER_PAGE = 4;
   
   const { products, loading, error, refetch } = useProducts();
   const { cart, addToCart, updateQuantity, updatePrice, removeFromCart, clearCart, getCartItem } = useCart();
   const { toast } = useToast();
 
-  // Capturar o chatId da URL quando a página carrega
+  // Capturar parâmetros da sessão da URL e sessionStorage
   useEffect(() => {
+    // Primeiro, tentar recuperar do sessionStorage
+    const savedSession = sessionStorage.getItem('session');
+    if (savedSession) {
+      try {
+        const parsed = JSON.parse(savedSession);
+        setSessionData(parsed);
+        console.log('📦 Sessão recuperada do sessionStorage:', parsed);
+        
+        // Verificar se a sessão está expirada
+        if (parsed.exp && Date.now() > parsed.exp * 1000) {
+          setIsExpired(true);
+          console.log('⏰ Sessão expirada');
+        }
+      } catch (error) {
+        console.error('❌ Erro ao recuperar sessão do storage:', error);
+      }
+    }
+
+    // Capturar novos parâmetros da URL (sobrescreve o sessionStorage)
+    const sessionId = searchParams.get('sessionId');
     const chatId = searchParams.get('chatId');
-    if (chatId) {
-      setN8nSessionId(chatId);
-      console.log('🔗 ChatId capturado da URL:', chatId);
+    const exp = searchParams.get('exp');
+    const sig = searchParams.get('sig');
+
+    if (sessionId || chatId || exp || sig) {
+      const newSessionData = {
+        sessionId,
+        chatId,
+        exp: exp ? parseInt(exp) : null,
+        sig
+      };
+      
+      setSessionData(newSessionData);
+      sessionStorage.setItem('session', JSON.stringify(newSessionData));
+      console.log('🔗 Novos parâmetros capturados da URL:', newSessionData);
+      
+      // Verificar se a nova sessão está expirada
+      if (exp && Date.now() > parseInt(exp) * 1000) {
+        setIsExpired(true);
+        console.log('⏰ Nova sessão já está expirada');
+      } else {
+        setIsExpired(false);
+      }
     }
   }, [searchParams]);
 
@@ -127,7 +172,10 @@ const Index = () => {
       // 3. Send to webhooks with retry logic
       let webhookSuccess = false;
       const webhookPayload = {
-        chatId: n8nSessionId,
+        sessionId: sessionData.sessionId,
+        chatId: sessionData.chatId,
+        exp: sessionData.exp,
+        sig: sessionData.sig,
         order_code: order.order_code,
         total_amount: cart.total,
         items: cart.items.map(item => ({
@@ -268,6 +316,20 @@ const Index = () => {
           </div>
         </div>
       </header>
+
+      {/* Session Expired Banner */}
+      {isExpired && (
+        <div className="container mx-auto px-3 sm:px-4 py-2">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center gap-3">
+            <Clock className="h-5 w-5 text-destructive flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-destructive">
+                Este link expirou. Solicite um novo link ao assistente.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
@@ -487,7 +549,7 @@ const Index = () => {
               <CartSummary
                 cart={cart}
                 onSubmit={() => setShowConfirmDialog(true)}
-                isSubmitting={isSubmitting}
+                isSubmitting={isSubmitting || isExpired}
                 onRemoveFromCart={removeFromCart}
               />
               
