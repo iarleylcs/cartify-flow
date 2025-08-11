@@ -184,6 +184,27 @@ export type Database = {
         }
         Relationships: []
       }
+      registros_rodizio: {
+        Row: {
+          created_at: string
+          id: number
+          "tem rodizio?": string | null
+          usuario: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          "tem rodizio?"?: string | null
+          usuario?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          "tem rodizio?"?: string | null
+          usuario?: string | null
+        }
+        Relationships: []
+      }
       Reunioes: {
         Row: {
           created_at: string
