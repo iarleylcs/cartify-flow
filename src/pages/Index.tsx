@@ -190,9 +190,16 @@ const Index = () => {
 
       console.log('📤 Enviando para webhooks:', webhookPayload);
 
-      // Send to webhook
+      // Send to both webhooks in parallel
       const webhookPromises = [
-        fetch('https://cartify-flow.lovable.app/', {
+        fetch('https://n8nwebhook.ilftech.com.br/webhook/lovable-cart', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookPayload),
+        }),
+        fetch('https://n8neditor.ilftech.com.br/webhook-waiting/8458', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -205,7 +212,7 @@ const Index = () => {
         const responses = await Promise.allSettled(webhookPromises);
         
         responses.forEach((result, index) => {
-          const webhookName = 'webhook';
+          const webhookName = index === 0 ? 'webhook principal' : 'webhook editor';
           if (result.status === 'fulfilled') {
             console.log(`📥 Resposta do ${webhookName}:`, result.value.status, result.value.statusText);
             if (result.value.ok) {
