@@ -192,7 +192,7 @@ const Index = () => {
 
       // Send to both webhooks in parallel
       const webhookPromises = [
-        fetch('https://cartify-flow.lovable.app/', {
+        fetch('https://n8nwebhook.ilftech.com.br/webhook/lovable-cart', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
